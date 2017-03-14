@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Utils Module User Manual</title>
+</head>
+
+<div class="align_image">
+    <H2><img src="byes.png" width="121" height="66" alt="BYES logo" /><span>BYES Apps - Utils Module</span></H2>
+</div>
+
+<style media="screen" type="text/css">
+
+    .align_image img, .align_image span {
+    vertical-align: middle;
+    display: inline-block;
+    }
+
+</style>
+
+For <b>Ignition 7.9+ or Ignition 7.8.3+</b><br><br>
+Author : Lionel MAZEYRAT <a href="l.mazeyrat@bouygues-es-siai.com">l.mazeyrat@bouygues-es-siai.com</a>
+
+<p>Instructions :</p>
+
+Use the following functions in your client scoped scripts :<br>
+<br>
+<ul>For tags subscriptions and update of a client tag dataset named <b>[client]tag_subscription</b> you have to create before<br><br><li>system.byes.utils.subscribe</li>
+<li>system.byes.utils.unsubscribeAll</li>
+<li>system.byes.utils.unsubscribe</li>
+<li>system.byes.utils.browse - <b>keywords style parameters</b> (pattern synthax : <a href="http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html">http://docs.oracle.com/javase/7/docs/api/java/util/regex/Pattern.html</a>)</li>
+<li>system.byes.utils.isBrowseLimitReached</li>
+<li>system.byes.utils.getSizeOfSubscribedTagsList</li>
+<li>system.byes.utils.forceUpdateTagClientDataset</li>
+</ul>
+<ul>For tags subscriptions based on your dataset with TagFullPath, Value, LastChange and Quality columns, and update of a client tag dataset named <b>[client]ds_subscription</b> you have to create before<br>
+<br>
+<li>system.byes.utils.dataset.subscribe</li>
+<li>system.byes.utils.dataset.subscribeWK - <b>keywords style parameters</b></li>
+<li>system.byes.utils.dataset.unsubscribeAll</li>
+<li>system.byes.utils.dataset.forceUpdateTagClientDataset</li>
+<br>
+</ul>
+<p>ChangeLog : (Date format : YYYY/MM/DD)
+<ul>
+    <li>1.0.0 : 2017/03/10<br>
+        <ul><li>First release</li></li></ul>
+    <li>1.0.1 : 2017/03/14<br>
+        <ul><li>.dataset.subscribeWK for keywords style parameters : index of V,T,Q columns</li></li></ul>
+        <ul><li>.dataset.subscribeWK / .dataset.subscribe : force columns types for V,T,Q if type is incorrect in input dataset</li></li></ul>
+</ul>
+</p>
+
+
+</body>
+</html>
