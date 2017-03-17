@@ -299,8 +299,10 @@ public class ClientScriptModuleDataset{
                             logger.error("rowIndex={} > dataset.getRowCount={}",rowIndex,dataset.getRowCount());
                         } else {
                             dataset.setValueAt(rowIndex,datasetColIndexValue, (tag.getValue().getValue() == null) ? "null" : tag.getValue().getValue().toString());
-                            dataset.setValueAt(rowIndex,datasetColIndexLastChange, tag.getValue().getTimestamp());
-                            dataset.setValueAt(rowIndex,datasetColIndexQuality, tag.getValue().getQuality().toString());
+                            // 1.0.2 : Support des tags de type Array - ajout ctrl colxxxOk
+                            if (colIndexValueOk) dataset.setValueAt(rowIndex,datasetColIndexValue,Utils.tagValueToString(tag));
+                            if (colIndexLastChangeOk) dataset.setValueAt(rowIndex,datasetColIndexLastChange, tag.getValue().getTimestamp());
+                            if (colIndexQualityOk) dataset.setValueAt(rowIndex,datasetColIndexQuality, tag.getValue().getQuality().toString());
                         }
                         rowIndex ++;
                     }
@@ -411,7 +413,8 @@ public class ClientScriptModuleDataset{
                 } else if (rowIndex > dataset.getRowCount()){
                     logger.error("rowIndex={} > dataset.getRowCount={}",rowIndex,dataset.getRowCount());
                 } else {
-                    if (colIndexValueOk) dataset.setValueAt(rowIndex,datasetColIndexValue, (e.getTag().getValue().getValue() == null) ? "null" : e.getTag().getValue().getValue().toString());
+                    // 1.0.2 : Support des tags de type Array
+                    if (colIndexValueOk) dataset.setValueAt(rowIndex,datasetColIndexValue,Utils.tagValueToString(e.getTag()));
                     if (colIndexLastChangeOk) dataset.setValueAt(rowIndex,datasetColIndexLastChange, e.getTag().getValue().getTimestamp());
                     if (colIndexQualityOk) dataset.setValueAt(rowIndex,datasetColIndexQuality, e.getTag().getValue().getQuality().toString());
                     updateTagClient.set(true);

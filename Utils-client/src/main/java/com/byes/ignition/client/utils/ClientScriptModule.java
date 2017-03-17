@@ -14,6 +14,7 @@ import com.inductiveautomation.ignition.common.sqltags.model.TagPath;
 import com.inductiveautomation.ignition.common.sqltags.model.TagProp;
 import com.inductiveautomation.ignition.common.sqltags.model.event.TagChangeEvent;
 import com.inductiveautomation.ignition.common.sqltags.model.event.TagChangeListener;
+import com.inductiveautomation.ignition.common.sqltags.model.types.DataType;
 import com.inductiveautomation.ignition.common.sqltags.model.types.TagType;
 import com.inductiveautomation.ignition.common.sqltags.parser.TagPathParser;
 
@@ -390,7 +391,8 @@ public class ClientScriptModule{
                     for (Tag tag : listTag){
                         HashMap mapValue = mapTags.get(listTagRead.get(indexTag).toStringFull());
                         if (mapValue != null) {
-                            mapValue.put("Value", (tag.getValue().getValue() == null) ? "null" : tag.getValue().getValue().toString());
+                            // 1.0.2 : Support des tags de type Array
+                            mapValue.put("Value", Utils.tagValueToString(tag));
                             mapValue.put("LastChange", tag.getValue().getTimestamp());
                             mapValue.put("Quality", tag.getValue().getQuality().toString());
                         } else {
@@ -489,14 +491,6 @@ public class ClientScriptModule{
 //            colonne => tableau de données de même type
 //            BasicDataset dataset = new BasicDataset(listNomColonne.toArray(),listTypeColonne.toArray(),null);
 
-                //Object[][] values = new Object[][];
-                // public BasicDataset(String[] columnNames, Class<?>[] columnTypes, Object[][] data) {
-                // Nb de tag => nb lignes
-                //mapTags.keySet().size()
-                // Nb de colonnes par tag
-                //listNomColonne.size()
-                //Object[][] data = new Object[mapTags.keySet().size()][listNomColonne.size()];
-
             if (mapTags.isEmpty()){
                 // Ecriture du dataset NULL dans le tag client
                 this.clientContext.getTagManager().write(TagPathParser.parse("client", TAGPATH_CLIENT_DATASET), null);
@@ -550,7 +544,8 @@ public class ClientScriptModule{
 
                 HashMap mapValue = mapTags.get(e.getTagPath().toStringFull());
                 if (mapValue != null) {
-                    mapValue.put("Value", (e.getTag().getValue().getValue() == null) ? "null" : e.getTag().getValue().getValue().toString());
+                    // 1.0.2 : Support des tags de type Array
+                    mapValue.put("Value", Utils.tagValueToString(e.getTag()));
                     mapValue.put("LastChange", e.getTag().getValue().getTimestamp());
                     mapValue.put("Quality", e.getTag().getValue().getQuality().toString());
                     updateTagClient.set(true);
