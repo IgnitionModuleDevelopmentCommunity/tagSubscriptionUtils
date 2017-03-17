@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.inductiveautomation.vision:vision-designer:9.9.0-SNAPSHOT">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/inductiveautomation/vision/vision-designer/9.9.0-SNAPSHOT/vision-designer-9.9.0-20160913.205041-2.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/inductiveautomation/vision/vision-designer/9.9.0-SNAPSHOT/vision-designer-9.9.0-20160913.205041-2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/inductiveautomation/vision/vision-designer/9.9.0-SNAPSHOT/vision-designer-9.9.0-20160913.205041-2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

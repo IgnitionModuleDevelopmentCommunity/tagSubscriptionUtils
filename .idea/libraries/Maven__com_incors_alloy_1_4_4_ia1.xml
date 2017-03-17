@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: com.incors:alloy:1.4.4.ia1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/incors/alloy/1.4.4.ia1/alloy-1.4.4.ia1.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/com/incors/alloy/1.4.4.ia1/alloy-1.4.4.ia1-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/incors/alloy/1.4.4.ia1/alloy-1.4.4.ia1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

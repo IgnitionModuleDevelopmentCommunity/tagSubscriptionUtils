@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Utils.iml" filepath="$PROJECT_DIR$/Utils.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Utils-build/Utils-build.iml" filepath="$PROJECT_DIR$/Utils-build/Utils-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Utils-client/Utils-client.iml" filepath="$PROJECT_DIR$/Utils-client/Utils-client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Utils-common/Utils-common.iml" filepath="$PROJECT_DIR$/Utils-common/Utils-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Utils-designer/Utils-designer.iml" filepath="$PROJECT_DIR$/Utils-designer/Utils-designer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Utils-gateway/Utils-gateway.iml" filepath="$PROJECT_DIR$/Utils-gateway/Utils-gateway.iml" />
+    </modules>
+  </component>
+</project>

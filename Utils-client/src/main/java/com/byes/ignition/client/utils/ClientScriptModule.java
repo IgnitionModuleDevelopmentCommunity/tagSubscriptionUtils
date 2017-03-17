@@ -126,7 +126,9 @@ public class ClientScriptModule{
      * Methode récursive de parcours des Tags ignition
      */
     // fullTagPath => path complet d'un tag ou d'un folder
-    // retrn true , si result limité
+    // return true, si result limité ou erreur lors du browse
+    // TODO : A revoir CR int ?
+    // Caused by: com.inductiveautomation.ignition.client.gateway_interface.GatewayException: The tag provider 'SITE1' is not currently available.
 
     @NoHint
     private boolean browseTag(String fullTagPath,List<String> resultListFullTagPath,Integer limitResults){

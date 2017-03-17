@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.python:jython:2.5.3-guava-upgrade">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/python/jython/2.5.3-guava-upgrade/jython-2.5.3-guava-upgrade.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/python/jython/2.5.3-guava-upgrade/jython-2.5.3-guava-upgrade-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/python/jython/2.5.3-guava-upgrade/jython-2.5.3-guava-upgrade-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
