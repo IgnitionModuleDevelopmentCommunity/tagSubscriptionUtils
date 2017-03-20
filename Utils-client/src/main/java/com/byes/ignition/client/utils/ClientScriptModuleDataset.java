@@ -77,105 +77,73 @@ public class ClientScriptModuleDataset{
     }
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void subscribe(@ScriptArg("datasetInput") Dataset datasetInput) {
-        try {
-            // désabonnement du dataset précédant
-            unsubscribeAll();
-
-            if (datasetInput!=null){
-                List<String> columnNames = datasetInput.getColumnNames();
-                // recherche des index des colonnes qui seront maj
-                // et vérification des types avec le dataset fournit
-                int index = 0;
-                for (String col : columnNames){
-                    if (col.equalsIgnoreCase("TagFullPath")){
-                        datasetColIndexTagFullPath = index;
-                        if (datasetInput.getColumnType(datasetColIndexTagFullPath) == String.class){
-                            colIndexTagFullPathOk = true;
-                        }
-                    } else if (col.equalsIgnoreCase("Value")){
-                        datasetColIndexValue = index;
-                        colIndexValueOk = true;
-                    } else if (col.equalsIgnoreCase("LastChange")){
-                        datasetColIndexLastChange = index;
-                        colIndexLastChangeOk = true;
-                    } else if (col.equalsIgnoreCase("Quality")) {
-                        datasetColIndexQuality = index;
-                        colIndexQualityOk = true;
-                    }
-                    index ++;
-                }
-
-                if (!colIndexTagFullPathOk || !colIndexValueOk){
-                    logger.error("dataset must contains the columns : TagFullPath and Value (optional : LastChange,Quality)");
-                }else{
-                    // reconfiguration des types des colonnes du dataset qui sont ecrites
-                    // /!\ on fait une copie, sinon pas modifiable !
-                    List<Class<?>> colTypes = new ArrayList<Class<?>>(datasetInput.getColumnTypes());
-                    //logger.debug("colTypes = {}",colTypes.toString());
-                    //logger.debug("columnNames = {}",columnNames.toString());
-                    if (colIndexValueOk){
-                        logger.debug("datasetColIndexValue={}",datasetColIndexValue);
-                        colTypes.set(datasetColIndexValue,String.class);
-                    }
-                    if (colIndexLastChangeOk){
-                        colTypes.set(datasetColIndexLastChange,java.util.Date.class);
-                    }
-                    if (colIndexQualityOk){
-                        colTypes.set(datasetColIndexQuality,String.class);
-                    }
-                    // copie du contenu référence qui pointe sur celui crée dans le script python
-                    // mais détruit à la fin du script de souscription
-                    // et modification des types de colonnes si besoin
-                    dataset = new BasicDataset(columnNames,colTypes,datasetInput);
-                    // souscription des tag
-                    subscribeDataset();
-                }
-            } else {
-                logger.error("dataset is null");
-            }
-        } catch (Exception e) {
-            logger.error("error : ",e);
-        }
-    }
-
-    @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     @KeywordArgs(names = {"dataset","indexTagFullPath","indexValue","indexLastChange","indexQuality"},
                 types = {Dataset.class,Integer.class,Integer.class,Integer.class,Integer.class})
-    public void subscribeWK(PyObject[] pyArgs, String[] keywords)
+    public void subscribe(PyObject[] pyArgs, String[] keywords)
     {
+        // 1.0.3 subscribeWK renommé en subscribe
+        // Si la fonction est appelée sans keyword, les paramètres sont taggés avec les noms indiqués dans names=...
         try {
-            PyArgumentMap args = PyArgumentMap.interpretPyArgs(pyArgs, keywords, ClientScriptModuleDataset.class, "subscribeWK");
-
-            Dataset datasetInput = (Dataset) args.getArg("dataset",null);
-            datasetColIndexTagFullPath = args.getIntArg("indexTagFullPath",-1);
-            datasetColIndexValue = args.getIntArg("indexValue",-1);
-            datasetColIndexLastChange = args.getIntArg("indexLastChange",-1);
-            datasetColIndexQuality = args.getIntArg("indexQuality",-1);
-
+            PyArgumentMap args = PyArgumentMap.interpretPyArgs(pyArgs, keywords, ClientScriptModuleDataset.class, "subscribe");
+            logger.debug("map args={}",args.toString());
             colIndexTagFullPathOk = false;
             colIndexValueOk = false;
             colIndexLastChangeOk = false;
             colIndexQualityOk = false;
-
+            Dataset datasetInput = (Dataset) args.getArg("dataset",null);
             if (datasetInput!=null){
                 // désabonnement du dataset précédant
                 unsubscribeAll();
-                // Vérification des index des colonnes qui seront maj compatible avec le dataset fourni
-                if ((datasetColIndexTagFullPath >= 0) && (datasetColIndexTagFullPath < datasetInput.getRowCount())){
-                    if (datasetInput.getColumnType(datasetColIndexTagFullPath) == String.class){
-                        colIndexTagFullPathOk = true;
+                // Use case 1 : appel de la fonction avec un dataset et des numéro de colonne
+                if (args.containsKey("indexTagFullPath") ||
+                        args.containsKey("indexValue") ||
+                        args.containsKey("indexLastChange") ||
+                        args.containsKey("indexQuality")){
+                    datasetColIndexTagFullPath = args.getIntArg("indexTagFullPath",-1);
+                    datasetColIndexValue = args.getIntArg("indexValue",-1);
+                    datasetColIndexLastChange = args.getIntArg("indexLastChange",-1);
+                    datasetColIndexQuality = args.getIntArg("indexQuality",-1);
+                    // Vérification des index des colonnes qui seront maj compatible avec le dataset fourni
+                    if ((datasetColIndexTagFullPath >= 0) && (datasetColIndexTagFullPath < datasetInput.getRowCount())){
+                        if (datasetInput.getColumnType(datasetColIndexTagFullPath) == String.class){
+                            colIndexTagFullPathOk = true;
+                        }
+                    }
+                    if ((datasetColIndexValue >= 0) && (datasetColIndexValue < datasetInput.getRowCount())){
+                        colIndexValueOk = true;
+                    }
+                    if ((datasetColIndexLastChange >= 0) && (datasetColIndexLastChange < datasetInput.getRowCount())){
+                        colIndexLastChangeOk = true;
+                    }
+                    if ((datasetColIndexQuality >= 0) && (datasetColIndexQuality < datasetInput.getRowCount())){
+                        colIndexQualityOk = true;
+                    }
+                } else {
+                    // Use case 2 : appel de la fonction avec un dataset et des colonnes nommées dans le dataset
+                    List<String> columnNames = datasetInput.getColumnNames();
+                    // recherche des index des colonnes qui seront maj
+                    // et vérification des types avec le dataset fournit
+                    int index = 0;
+                    for (String col : columnNames){
+                        if (col.equalsIgnoreCase("TagFullPath")){
+                            datasetColIndexTagFullPath = index;
+                            if (datasetInput.getColumnType(datasetColIndexTagFullPath) == String.class){
+                                colIndexTagFullPathOk = true;
+                            }
+                        } else if (col.equalsIgnoreCase("Value")){
+                            datasetColIndexValue = index;
+                            colIndexValueOk = true;
+                        } else if (col.equalsIgnoreCase("LastChange")){
+                            datasetColIndexLastChange = index;
+                            colIndexLastChangeOk = true;
+                        } else if (col.equalsIgnoreCase("Quality")) {
+                            datasetColIndexQuality = index;
+                            colIndexQualityOk = true;
+                        }
+                        index ++;
                     }
                 }
-                if ((datasetColIndexValue >= 0) && (datasetColIndexValue < datasetInput.getRowCount())){
-                    colIndexValueOk = true;
-                }
-                if ((datasetColIndexLastChange >= 0) && (datasetColIndexLastChange < datasetInput.getRowCount())){
-                    colIndexLastChangeOk = true;
-                }
-                if ((datasetColIndexQuality >= 0) && (datasetColIndexQuality < datasetInput.getRowCount())){
-                    colIndexQualityOk = true;
-                }
+
                 if (!colIndexTagFullPathOk || !colIndexValueOk){
                     logger.error("dataset must contains the columns : TagFullPath and Value (optional : LastChange,Quality)");
                 }else{

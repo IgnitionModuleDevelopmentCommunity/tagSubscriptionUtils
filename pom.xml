@@ -18,7 +18,7 @@
                 <ignition-sdk-version>7.8.0</ignition-sdk-version>
         -->
                 <ignition-sdk-version>7.9.0-SNAPSHOT</ignition-sdk-version>
-                <version-module>1.0.2</version-module>
+                <version-module>1.0.3</version-module>
     </properties>
 
     <modules>
