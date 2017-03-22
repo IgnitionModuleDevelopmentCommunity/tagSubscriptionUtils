@@ -87,7 +87,7 @@ public class ClientScriptModuleDataset{
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     @KeywordArgs(names = {"dataset","indexTagFullPath","indexValue","indexLastChange","indexQuality"},
                 types = {Dataset.class,Integer.class,Integer.class,Integer.class,Integer.class})
-    public void subscribe(PyObject[] pyArgs, String[] keywords)
+    public synchronized void subscribe(PyObject[] pyArgs, String[] keywords)
     {
         // 1.0.3 subscribeWK renommé en subscribe
         // Si la fonction est appelée sans keyword, les paramètres sont taggés avec les noms indiqués dans names=...
@@ -248,7 +248,7 @@ public class ClientScriptModuleDataset{
     }
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void unsubscribeAll() {
+    public synchronized void unsubscribeAll() {
         try {
             if ((listSubscribedTagPath != null) && (listSubscribedTagChangeListener != null)){
                 if (!listSubscribedTagPath.isEmpty() && !listSubscribedTagChangeListener.isEmpty()){
@@ -268,8 +268,9 @@ public class ClientScriptModuleDataset{
 
     //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void freezeAll() {
+    public synchronized void freezeAll() {
         try {
+            logger.debug("freezeAll()");
             if ((listSubscribedTagPath != null) && (listSubscribedTagChangeListener != null)){
                 if (!listSubscribedTagPath.isEmpty() && !listSubscribedTagChangeListener.isEmpty()){
                     this.clientContext.getTagManager().unsubscribe(listSubscribedTagPath,listSubscribedTagChangeListener);
@@ -281,6 +282,7 @@ public class ClientScriptModuleDataset{
             //Mémorisation Avant effacement
             if (dataset != null){
                 freezeDataset = new BasicDataset(dataset);
+                logger.debug("Save of {} rows",freezeDataset.getRowCount());
                 freezeDatasetColIndexTagFullPath = datasetColIndexTagFullPath;
                 freezeDatasetColIndexValue = datasetColIndexValue;
                 freezeDatasetColIndexLastChange = datasetColIndexLastChange;
@@ -290,6 +292,7 @@ public class ClientScriptModuleDataset{
                 updateTagClientDataset();
             } else {
                 freezeDataset = null;
+                logger.debug("Save of 0 rows");
                 freezeDatasetColIndexTagFullPath = -1;
                 freezeDatasetColIndexValue = -1;
                 freezeDatasetColIndexLastChange = -1;
@@ -302,10 +305,11 @@ public class ClientScriptModuleDataset{
 
     //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void unfreezeAll() {
+    public synchronized void unfreezeAll() {
         try {
+            logger.debug("unfreezeAll()");
             //Init à partir de la mémorisation Avant effacement
-            if (dataset != null){
+            if (freezeDataset != null){
                 dataset = new BasicDataset(freezeDataset);
                 datasetColIndexTagFullPath = freezeDatasetColIndexTagFullPath;
                 datasetColIndexValue = freezeDatasetColIndexValue;
@@ -321,7 +325,7 @@ public class ClientScriptModuleDataset{
     // force la relecture de l'ensemble des tags
     // et la maj du dataset client
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void forceUpdateTagClientDataset(){
+    public synchronized void forceUpdateTagClientDataset(){
         try {
             if (dataset != null){
                 try{
@@ -374,7 +378,7 @@ public class ClientScriptModuleDataset{
     private class ExecutionCyclic implements Runnable{
         @Override
         public void run() {
-            logger.debug("Execute CyclicUpdateTagClientDataset");
+            logger.trace("Execute CyclicUpdateTagClientDataset");
             // updateTagClient.compareAndSet(expect, update)
             // expect => valeur attendue
             // update => valeur de mise à jour si valeur attendue
@@ -413,6 +417,7 @@ public class ClientScriptModuleDataset{
 
     @NoHint
     public void shutdownCyclicUpdateTagClientDataset(){
+        unsubscribeAll();
         if (executionEngine != null){
             executionEngine.shutdown();
             logger.debug("BasicExecutionEngine shutdown");
@@ -472,7 +477,7 @@ public class ClientScriptModuleDataset{
 
     //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public int getSizeOfSubscribedTagsList() {
+    public synchronized int getSizeOfSubscribedTagsList() {
         if (listSubscribedTagPath==null){
             return 0;
         }else{
@@ -482,7 +487,7 @@ public class ClientScriptModuleDataset{
 
     //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public List<String> getSubscribedFullTagPathsList() {
+    public synchronized List<String> getSubscribedFullTagPathsList() {
         List<String> fullTagPathsList = new ArrayList<String>();
         for (TagPath tagpath : listSubscribedTagPath){
             fullTagPathsList.add(tagpath.toStringFull());
@@ -492,7 +497,7 @@ public class ClientScriptModuleDataset{
 
     //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public List<TagPath> getSubscribedTagPathsList() {
+    public synchronized List<TagPath> getSubscribedTagPathsList() {
         return(listSubscribedTagPath);
     }
 

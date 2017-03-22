@@ -192,7 +192,7 @@ public class ClientScriptModule{
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     @KeywordArgs(names = {"tagpaths","limit","regex"}, types = {List.class,Integer.class,String.class})
-    public List<String> browse(PyObject[] pyArgs, String[] keywords) {
+    public synchronized List<String> browse(PyObject[] pyArgs, String[] keywords) {
         List<String> resultListFullTagPath = new ArrayList<String>();
         try {
             PyArgumentMap args = PyArgumentMap.interpretPyArgs(pyArgs, keywords, ClientScriptModule.class, "browse");
@@ -225,12 +225,12 @@ public class ClientScriptModule{
     }
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public boolean isBrowseLimitReached() {
+    public synchronized boolean isBrowseLimitReached() {
         return browseLimitReached;
     }
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public int getSizeOfSubscribedTagsList() {
+    public synchronized int getSizeOfSubscribedTagsList() {
         if (paths==null){
             return 0;
         }else{
@@ -241,7 +241,7 @@ public class ClientScriptModule{
     //1.0.4
     // Nota : liste peut être trié différamment selon le keySet
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public List<String> getSubscribedFullTagPathsList() {
+    public synchronized List<String> getSubscribedFullTagPathsList() {
         List<String> listFullTagPath = new ArrayList<String>();
         if (paths != null){
             for (TagPath tagpath : paths.keySet()){
@@ -253,7 +253,7 @@ public class ClientScriptModule{
 
     //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public List<TagPath> getSubscribedTagPathsList() {
+    public synchronized List<TagPath> getSubscribedTagPathsList() {
         List<TagPath> listTagPath;
         if (paths != null){
             listTagPath = new ArrayList<TagPath>(paths.keySet());
@@ -411,8 +411,9 @@ public class ClientScriptModule{
 
     //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
-    public void freezeAll() {
+    public synchronized void freezeAll() {
         try {
+            logger.debug("freezeAll()");
             listFreezedSubscribedTagPath.clear();
             List<TagPath> listTagPath = new ArrayList<TagPath>();
             List<TagChangeListener> listTagChangeListener = new ArrayList<TagChangeListener>();
@@ -422,6 +423,7 @@ public class ClientScriptModule{
                 // Mémorisation des tag souscrits
                 listFreezedSubscribedTagPath.add(entry.getKey().toStringFull());
             }
+            logger.debug("Save of {} tags",listFreezedSubscribedTagPath.size());
             this.clientContext.getTagManager().unsubscribe(listTagPath,listTagChangeListener);
             logger.debug("Delete subscriptions for VTQ of {} tags",listTagPath.size());
             paths.clear();
@@ -437,6 +439,7 @@ public class ClientScriptModule{
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     public void unfreezeAll() {
         try {
+            logger.debug("unfreezeAll()");
             if (listFreezedSubscribedTagPath != null){
                 if (!listFreezedSubscribedTagPath.isEmpty()) {
                     // Copie de la liste passée en paramètre car effecament systématique de listFreezedSubscribedTagPath
@@ -452,7 +455,7 @@ public class ClientScriptModule{
     // force la relecture de l'ensemble des tags
     // et la maj du dataset client
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
-    public void forceUpdateTagClientDataset(){
+    public synchronized void forceUpdateTagClientDataset(){
         try {
             if (!mapTags.isEmpty()){
                 List<TagPath> listTagRead = new ArrayList<TagPath>(paths.keySet());
@@ -506,8 +509,7 @@ public class ClientScriptModule{
     private class ExecutionCyclic implements Runnable{
         @Override
         public void run() {
-            logger.debug("Execute CyclicUpdateTagClientDataset");
-
+            logger.trace("Execute CyclicUpdateTagClientDataset");
             // updateTagClient.compareAndSet(expect, update)
             // expect => valeur attendue
             // update => valeur de mise à jour si valeur attendue
@@ -546,6 +548,7 @@ public class ClientScriptModule{
 
     @NoHint
     public void shutdownCyclicUpdateTagClientDataset(){
+        unsubscribeAll();
         if (executionEngine != null){
             executionEngine.shutdown();
             logger.debug("BasicExecutionEngine shutdown");
