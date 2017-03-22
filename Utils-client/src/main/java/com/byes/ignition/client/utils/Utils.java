@@ -63,7 +63,12 @@ public final class Utils {
                 // TODO : revoir gestion string plus efficace
                 String valeurData = "";
                 for (int row=0;row < data.getRowCount();row++){
-                    valeurData = valeurData + "[";
+                    //1.0.4
+                    if (valeurData.isEmpty()){
+                        valeurData = valeurData + "[";
+                    } else {
+                        valeurData = valeurData + ",[";
+                    }
                     for (int col=0;col < data.getColumnCount();col++) {
                         valeurData += ((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
                         if (col < data.getColumnCount()-1){
