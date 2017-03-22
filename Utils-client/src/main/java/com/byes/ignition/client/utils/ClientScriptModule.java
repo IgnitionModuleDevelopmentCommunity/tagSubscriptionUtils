@@ -1,5 +1,6 @@
 package com.byes.ignition.client.utils;
 
+import com.inductiveautomation.factorypmi.application.script.builtin.ClientSystemUtilities;
 import com.inductiveautomation.ignition.common.BasicDataset;
 import com.inductiveautomation.ignition.common.BundleUtil;
 import com.inductiveautomation.ignition.common.execution.impl.BasicExecutionEngine;
@@ -59,6 +60,9 @@ public class ClientScriptModule{
 
     private Map<TagPath,TagChangeListener> paths = new HashMap<TagPath,TagChangeListener>();
     private ConcurrentHashMap<String,HashMap> mapTags = new ConcurrentHashMap<String,HashMap>();
+
+    //1.0.4
+    private List<String> listFreezedSubscribedTagPath = new ArrayList<String>();
 
     private List<String> listNomColonne = new ArrayList<String>();
     private List<Class<?>> listTypeColonne = new ArrayList<Class<?>>();
@@ -227,7 +231,36 @@ public class ClientScriptModule{
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public int getSizeOfSubscribedTagsList() {
-        return paths.size();
+        if (paths==null){
+            return 0;
+        }else{
+            return paths.size();
+        }
+    }
+
+    //1.0.4
+    // Nota : liste peut être trié différamment selon le keySet
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public List<String> getSubscribedFullTagPathsList() {
+        List<String> listFullTagPath = new ArrayList<String>();
+        if (paths != null){
+            for (TagPath tagpath : paths.keySet()){
+                listFullTagPath.add(tagpath.toStringFull());
+            }
+        }
+        return(listFullTagPath);
+    }
+
+    //1.0.4
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public List<TagPath> getSubscribedTagPathsList() {
+        List<TagPath> listTagPath;
+        if (paths != null){
+            listTagPath = new ArrayList<TagPath>(paths.keySet());
+        } else {
+            listTagPath = new ArrayList<TagPath>();
+        }
+        return(listTagPath);
     }
 
     /**
@@ -237,10 +270,12 @@ public class ClientScriptModule{
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public void subscribe(@ScriptArg("listTagPath") java.util.List<java.lang.String> listTagPath) {
         try {
-
             if (checkTagClientExist()==false){
                 logger.error("You Must create tag client for subscription update : {}",TAGPATH_CLIENT_DATASET);
             }
+
+            // Effacement systématique en cas de rappel de la fonction unfreezeAll sans freezeAll avant
+            if (listFreezedSubscribedTagPath!=null) listFreezedSubscribedTagPath.clear();
 
             List<TagPath> listAdd = new ArrayList<TagPath>();
             List<TagChangeListener> listenersAdd = new ArrayList<TagChangeListener>();
@@ -368,6 +403,47 @@ public class ClientScriptModule{
             paths.clear();
             mapTags.clear();
             updateTagClientDataset();
+            listFreezedSubscribedTagPath.clear();
+        } catch (Exception e) {
+            logger.error("error : ",e);
+        }
+    }
+
+    //1.0.4
+    @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
+    public void freezeAll() {
+        try {
+            listFreezedSubscribedTagPath.clear();
+            List<TagPath> listTagPath = new ArrayList<TagPath>();
+            List<TagChangeListener> listTagChangeListener = new ArrayList<TagChangeListener>();
+            for (HashMap.Entry<TagPath, TagChangeListener> entry : paths.entrySet()) {
+                listTagPath.add(entry.getKey());
+                listTagChangeListener.add(entry.getValue());
+                // Mémorisation des tag souscrits
+                listFreezedSubscribedTagPath.add(entry.getKey().toStringFull());
+            }
+            this.clientContext.getTagManager().unsubscribe(listTagPath,listTagChangeListener);
+            logger.debug("Delete subscriptions for VTQ of {} tags",listTagPath.size());
+            paths.clear();
+            mapTags.clear();
+            // nota : effacement dataset provoque RAS tag client et arrêt fonction cyclique regroupement maj dataset si besoin
+            updateTagClientDataset();
+        } catch (Exception e) {
+            logger.error("error : ",e);
+        }
+    }
+
+    //1.0.4
+    @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
+    public void unfreezeAll() {
+        try {
+            if (listFreezedSubscribedTagPath != null){
+                if (!listFreezedSubscribedTagPath.isEmpty()) {
+                    // Copie de la liste passée en paramètre car effecament systématique de listFreezedSubscribedTagPath
+                    // dans subscribe
+                    subscribe(new ArrayList<String>(listFreezedSubscribedTagPath));
+                }
+            }
         } catch (Exception e) {
             logger.error("error : ",e);
         }

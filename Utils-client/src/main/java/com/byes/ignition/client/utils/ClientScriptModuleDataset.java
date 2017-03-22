@@ -67,6 +67,14 @@ public class ClientScriptModuleDataset{
     private List<TagPath> listSubscribedTagPath = new ArrayList<TagPath>();
     private List<TagChangeListener> listSubscribedTagChangeListener = new ArrayList<TagChangeListener>();
 
+    //1.0.4 fro freeze management
+    private BasicDataset freezeDataset = null;
+
+    private int freezeDatasetColIndexTagFullPath = -1;
+    private int freezeDatasetColIndexValue = -1;
+    private int freezeDatasetColIndexLastChange = -1;
+    private int freezeDatasetColIndexQuality = -1;
+
     public ClientScriptModuleDataset(ClientContext _clientContext) {
         try {
             logger.debug("Constructor ClientScriptModuleDataset");
@@ -176,6 +184,15 @@ public class ClientScriptModuleDataset{
 
     @NoHint
     public void subscribeDataset() {
+        // effacement des listes de tag souscrits
+        listSubscribedTagPath.clear();
+        listSubscribedTagChangeListener.clear();
+        // freezeDataset est copiée dans dataset avant si fonction utilisée pour unfreezeAll()
+        freezeDataset=null;
+        freezeDatasetColIndexTagFullPath = -1;
+        freezeDatasetColIndexValue = -1;
+        freezeDatasetColIndexLastChange = -1;
+        freezeDatasetColIndexQuality = -1;
         // souscription des tag
         List<String> listTagPath = new ArrayList<String>();
         for (int row = 0; row < dataset.getRowCount(); row++) {
@@ -243,6 +260,59 @@ public class ClientScriptModuleDataset{
             }
             dataset = null;
             updateTagClientDataset();
+            freezeDataset = null;
+        } catch (Exception e) {
+            logger.error("error : ",e);
+        }
+    }
+
+    //1.0.4
+    @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
+    public void freezeAll() {
+        try {
+            if ((listSubscribedTagPath != null) && (listSubscribedTagChangeListener != null)){
+                if (!listSubscribedTagPath.isEmpty() && !listSubscribedTagChangeListener.isEmpty()){
+                    this.clientContext.getTagManager().unsubscribe(listSubscribedTagPath,listSubscribedTagChangeListener);
+                    logger.debug("Delete subscriptions for VTQ of {} tags",listSubscribedTagPath.size());
+                    listSubscribedTagPath.clear();
+                    listSubscribedTagChangeListener.clear();
+                }
+            }
+            //Mémorisation Avant effacement
+            if (dataset != null){
+                freezeDataset = new BasicDataset(dataset);
+                freezeDatasetColIndexTagFullPath = datasetColIndexTagFullPath;
+                freezeDatasetColIndexValue = datasetColIndexValue;
+                freezeDatasetColIndexLastChange = datasetColIndexLastChange;
+                freezeDatasetColIndexQuality = datasetColIndexQuality;
+                // Effacement du dataset
+                dataset = null;
+                updateTagClientDataset();
+            } else {
+                freezeDataset = null;
+                freezeDatasetColIndexTagFullPath = -1;
+                freezeDatasetColIndexValue = -1;
+                freezeDatasetColIndexLastChange = -1;
+                freezeDatasetColIndexQuality = -1;
+            }
+        } catch (Exception e) {
+            logger.error("error : ",e);
+        }
+    }
+
+    //1.0.4
+    @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
+    public void unfreezeAll() {
+        try {
+            //Init à partir de la mémorisation Avant effacement
+            if (dataset != null){
+                dataset = new BasicDataset(freezeDataset);
+                datasetColIndexTagFullPath = freezeDatasetColIndexTagFullPath;
+                datasetColIndexValue = freezeDatasetColIndexValue;
+                datasetColIndexLastChange = freezeDatasetColIndexLastChange;
+                datasetColIndexQuality = freezeDatasetColIndexQuality;
+                subscribeDataset();
+            }
         } catch (Exception e) {
             logger.error("error : ",e);
         }
@@ -399,4 +469,31 @@ public class ClientScriptModuleDataset{
             return null;
         }
     }
+
+    //1.0.4 : Ajout
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public int getSizeOfSubscribedTagsList() {
+        if (listSubscribedTagPath==null){
+            return 0;
+        }else{
+            return listSubscribedTagPath.size();
+        }
+    }
+
+    //1.0.4 : Ajout
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public List<String> getSubscribedFullTagPathsList() {
+        List<String> fullTagPathsList = new ArrayList<String>();
+        for (TagPath tagpath : listSubscribedTagPath){
+            fullTagPathsList.add(tagpath.toStringFull());
+        }
+        return fullTagPathsList;
+    }
+
+    //1.0.4 : Ajout
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public List<TagPath> getSubscribedTagPathsList() {
+        return(listSubscribedTagPath);
+    }
+
 }
