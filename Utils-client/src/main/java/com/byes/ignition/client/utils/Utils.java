@@ -60,25 +60,32 @@ public final class Utils {
                 return valeurTab;
             } else if (isTagDataset(tag)){
                 Dataset data = (Dataset) tag.getValue().getValue();
-                // TODO : revoir gestion string plus efficace
-                String valeurData = "";
+                //String valeurData = "";
+                StringBuilder valeurData = new StringBuilder();
                 for (int row=0;row < data.getRowCount();row++){
-                    //1.0.4
-                    if (valeurData.isEmpty()){
-                        valeurData = valeurData + "[";
+                    //1.0.4 - 1.0.5
+                    //if (valeurData.isEmpty()){
+                    if (valeurData.toString().isEmpty()){
+                        //valeurData = valeurData + "[";
+                        valeurData.append("[");
                     } else {
-                        valeurData = valeurData + ",[";
+                        //valeurData = valeurData + ",[";
+                        valeurData.append(",[");
                     }
                     for (int col=0;col < data.getColumnCount();col++) {
-                        valeurData += ((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
+                        valeurData.append((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
+                        //valeurData += ((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
                         if (col < data.getColumnCount()-1){
-                            valeurData += ",";
+                            //valeurData += ",";
+                            valeurData.append(",");
                         }
                     }
-                    valeurData = valeurData + "]";
+                    valeurData.append("]");
+                    //valeurData = valeurData + "]";
                 }
-                valeurData = "[" + valeurData + "]";
-                return valeurData;
+                //valeurData = "[" + valeurData + "]";
+                valeurData.insert(0,"[").append("]");
+                return valeurData.toString();
             } else {
                 return tag.getValue().getValue().toString();
             }

@@ -48,7 +48,8 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
         super.initializeScriptManager(manager);
 
-        /*
+        // no gateway scoped function
+		/*
         manager.addScriptModule(
                 "system.audit",
                 scriptModule,
