@@ -1,6 +1,12 @@
 # tagSubscriptionUtils
 Scripts functions for tags subscription and dataset update
 
+<b>Project example :<br></b>
+See in root directory : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
+
+<b>Ignition utils modules :<br></b>
+See in root directory : <b>CommunityUtils-signed-1.0.5.modl</b>
+
 More informations :
 http://smartindustrialcomputing.blogspot.fr/2017/03/ignition-utils-module-clients-scripts.html
 
@@ -24,12 +30,4 @@ Button refresh can only be use to force a refresh.
 
 ![tagbrowser](/dataset.jpg)
 
-Project example :
-See in root directory : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
-
-Ignition utils modules :
-See in root directory : <b>CommunityUtils-signed-1.0.5.modl</b>
-
 Hope this help you to build more reactive HMI with Ignition an its power table component !
-
-
