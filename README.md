@@ -17,7 +17,7 @@ As the result, in <b>use case 1</b>, you can quickly create an efficient tag bro
 •	a tag browser tree
 •	a power table (binded to the tag client updated by this module)
 
-![tagbrowser](https://github.com/IgnitionModuleDevelopmentCommunity/tagSubscriptionUtils/tagbrowser.jpg)
+![tagbrowser](/tagbrowser.jpg)
 
 Use <b>case 2</b>, an input dataset with columns V, T, Q automatically refreshed when the tags' data change.
 Button refresh can only be use to force a refresh.
