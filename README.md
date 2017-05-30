@@ -25,10 +25,10 @@ Button refresh can only be use to force a refresh.
 ![tagbrowser](/dataset.jpg)
 
 Project example :
-See : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
+See in root directory : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
 
 Ignition utils modules :
-See : <b>CommunityUtils-signed-1.0.5.modl</b>
+See in root directory : <b>CommunityUtils-signed-1.0.5.modl</b>
 
 Hope this help you to build more reactive HMI with Ignition an its power table component !
 
