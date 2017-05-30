@@ -21,10 +21,10 @@ Use <b>case 2</b>, an input dataset with columns V, T, Q automatically refreshed
 Button refresh can only be use to force a refresh.
 
 Project example :
-See : TagsSubscriptions_Examples_2017-03-22.zip
+See : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
 
 Ignition utils modules :
-See : CommunityUtils-signed-1.0.5.modl
+See : <b>CommunityUtils-signed-1.0.5.modl</b>
 
 Hope this help you to build more reactive HMI with Ignition an its power table component !
 
