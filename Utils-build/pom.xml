@@ -10,17 +10,15 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <!-- deb LMA pour gestion build version -->
     <properties>
         <timestamp>${maven.build.timestamp}</timestamp>
         <maven.build.timestamp.format>yyyyMMddHH</maven.build.timestamp.format>
     </properties>
-    <!-- fin LMA -->
 
     <artifactId>Utils-build</artifactId>
 
     <dependencies>
-        <!-- 2.02 pour fonction exposée-->
+
         <dependency>
             <groupId>com.byes.ignition</groupId>
             <artifactId>Utils-client</artifactId>
@@ -32,6 +30,7 @@
             <artifactId>Utils-common</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+
         <dependency>
             <groupId>com.byes.ignition</groupId>
             <artifactId>Utils-designer</artifactId>
@@ -50,9 +49,6 @@
             <plugin>
                 <groupId>com.inductiveautomation.ignitionsdk</groupId>
                 <artifactId>ignition-maven-plugin</artifactId>
-                <!-- LMA
-                <version>1.0.8</version>
-                -->
                 <version>1.0.12</version>
                 <executions>
                     <execution>
@@ -61,60 +57,25 @@
                             <goal>modl</goal>
                         </goals>
                     </execution>
-
-                    <!-- ajout LMA -->
-                    <execution>
-                        <id>postexecution-gtc-est</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>post</goal>
-                        </goals>
-                        <configuration>
-                            <gatewayAddress>http://10.11.1.1:8088</gatewayAddress>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>postexecution-gtc-nord</id>
-                        <phase>install</phase>
-                        <goals>
-                            <goal>post</goal>
-                        </goals>
-                        <configuration>
-                            <gatewayAddress>http://10.11.1.4:8088</gatewayAddress>
-                        </configuration>
-                    </execution>
-                    <!-- fin LMA -->
-
                 </executions>
 
                 <configuration>
                     <projectScopes>
-                        <!-- 2.02 pour fonction exposée-->
                         <projectScope>
                             <name>Utils-client</name>
                             <scope>C</scope>
                         </projectScope>
-
-                    <!--
-                    <projectScope>
-                        <name>Utils-common</name>
-                        <scope>CDG</scope>
-                    </projectScope>
-                    -->
-
-                    <projectScope>
-                        <name>Utils-designer</name>
-                        <scope>CD</scope>
-                    </projectScope>
-                    <projectScope>
-                        <name>Utils-gateway</name>
-                        <scope>G</scope>
-                    </projectScope>
+                        <projectScope>
+                            <name>Utils-designer</name>
+                            <scope>CD</scope>
+                        </projectScope>
+                        <projectScope>
+                            <name>Utils-gateway</name>
+                            <scope>G</scope>
+                        </projectScope>
                 </projectScopes>
 
-                <!-- LMA module free : isFreeModule à gérer à partir de 7.8.3 -->
                     <freeModule>true</freeModule>
-                    <!-- LMA license file -->
                     <licenseFile>license.html</licenseFile>
                     <documentationFile>index.html</documentationFile>
 
@@ -123,16 +84,8 @@
                     <moduleDescription>${project.description}</moduleDescription>
                     <moduleVersion>${version-module}.${timestamp}</moduleVersion>
 
-                    <!--<moduleVersion>1.0-SNAPSHOT</moduleVersion>-->
                     <requiredIgnitionVersion>7.8.0</requiredIgnitionVersion>
-                    <!-- obsolete à partir de la 7.9
-                    <requiredFrameworkVersion>7</requiredFrameworkVersion>
-                    -->
-                    <!--
-                    <gatewayAddress>http://localhost:8088</gatewayAddress>
-                      -->
                     <hooks>
-                        <!-- 2.02 pour fonction exposée-->
                         <hook>
                             <scope>C</scope>
                             <hookClass>com.byes.ignition.client.utils.ClientHook</hookClass>

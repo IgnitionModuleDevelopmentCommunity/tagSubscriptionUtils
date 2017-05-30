@@ -46,7 +46,7 @@ public class ClientScriptModuleDataset{
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private ClientContext clientContext;
 
-    // flag de demande update cyclique du dataset client
+    // flag to ask for update of the tag client dataset
     private AtomicBoolean updateTagClient = new AtomicBoolean(false);
     private BasicExecutionEngine executionEngine = null;
     private ExecutionCyclic executionCyclic = null;
@@ -67,9 +67,7 @@ public class ClientScriptModuleDataset{
     private List<TagPath> listSubscribedTagPath = new ArrayList<TagPath>();
     private List<TagChangeListener> listSubscribedTagChangeListener = new ArrayList<TagChangeListener>();
 
-    //1.0.4 fro freeze management
     private BasicDataset freezeDataset = null;
-
     private int freezeDatasetColIndexTagFullPath = -1;
     private int freezeDatasetColIndexValue = -1;
     private int freezeDatasetColIndexLastChange = -1;
@@ -89,7 +87,6 @@ public class ClientScriptModuleDataset{
                 types = {Dataset.class,Integer.class,Integer.class,Integer.class,Integer.class})
     public synchronized void subscribe(PyObject[] pyArgs, String[] keywords)
     {
-        // 1.0.3 subscribeWK renommé en subscribe
         // Si la fonction est appelée sans keyword, les paramètres sont taggés avec les noms indiqués dans names=...
         try {
             PyArgumentMap args = PyArgumentMap.interpretPyArgs(pyArgs, keywords, ClientScriptModuleDataset.class, "subscribe");
@@ -100,9 +97,9 @@ public class ClientScriptModuleDataset{
             colIndexQualityOk = false;
             Dataset datasetInput = (Dataset) args.getArg("dataset",null);
             if (datasetInput!=null){
-                // désabonnement du dataset précédant
+                // unsubscribe previous dataset
                 unsubscribeAll();
-                // Use case 1 : appel de la fonction avec un dataset et des numéro de colonne
+                // Use case 1 : function call with a dataset and columns numbers
                 if (args.containsKey("indexTagFullPath") ||
                         args.containsKey("indexValue") ||
                         args.containsKey("indexLastChange") ||
@@ -111,7 +108,7 @@ public class ClientScriptModuleDataset{
                     datasetColIndexValue = args.getIntArg("indexValue",-1);
                     datasetColIndexLastChange = args.getIntArg("indexLastChange",-1);
                     datasetColIndexQuality = args.getIntArg("indexQuality",-1);
-                    // Vérification des index des colonnes qui seront maj compatible avec le dataset fourni
+                    // Check column index are ok with the provided dataset to update
                     if ((datasetColIndexTagFullPath >= 0) && (datasetColIndexTagFullPath < datasetInput.getRowCount())){
                         if (datasetInput.getColumnType(datasetColIndexTagFullPath) == String.class){
                             colIndexTagFullPathOk = true;
@@ -127,10 +124,9 @@ public class ClientScriptModuleDataset{
                         colIndexQualityOk = true;
                     }
                 } else {
-                    // Use case 2 : appel de la fonction avec un dataset et des colonnes nommées dans le dataset
+                    // Use case 2 : function call with a dataset and named column inside the provided dataset
                     List<String> columnNames = datasetInput.getColumnNames();
-                    // recherche des index des colonnes qui seront maj
-                    // et vérification des types avec le dataset fournit
+                    // search for column index tu update and check for column type
                     int index = 0;
                     for (String col : columnNames){
                         if (col.equalsIgnoreCase("TagFullPath")){
@@ -155,8 +151,8 @@ public class ClientScriptModuleDataset{
                 if (!colIndexTagFullPathOk || !colIndexValueOk){
                     logger.error("dataset must contains the columns : TagFullPath and Value (optional : LastChange,Quality)");
                 }else{
-                    // reconfiguration des types des colonnes du dataset qui sont ecrites
-                    // /!\ on fait une copie, sinon pas modifiable !
+                    // change the column datatype of updated columns
+                    // /!\ we do a copy
                     List<Class<?>> colTypes = new ArrayList<Class<?>>(datasetInput.getColumnTypes());
                     if (colIndexValueOk){
                         colTypes.set(datasetColIndexValue,String.class);
@@ -167,11 +163,9 @@ public class ClientScriptModuleDataset{
                     if (colIndexQualityOk){
                         colTypes.set(datasetColIndexQuality,String.class);
                     }
-                    // copie du contenu référence qui pointe sur celui crée dans le script python
-                    // mais détruit à la fin du script de souscription
-                    // et modification des types de colonnes si besoin
+                    // copy
                     dataset = new BasicDataset(datasetInput.getColumnNames(),colTypes,datasetInput);
-                    // souscription des tag
+                    // tag subscription
                     subscribeDataset();
                 }
             } else {
@@ -184,16 +178,16 @@ public class ClientScriptModuleDataset{
 
     @NoHint
     public void subscribeDataset() {
-        // effacement des listes de tag souscrits
+        // erase lists of subscribed tags
         listSubscribedTagPath.clear();
         listSubscribedTagChangeListener.clear();
-        // freezeDataset est copiée dans dataset avant si fonction utilisée pour unfreezeAll()
+        // freezeDataset is copied in a dataset before in case of function call unfreezeAll()
         freezeDataset=null;
         freezeDatasetColIndexTagFullPath = -1;
         freezeDatasetColIndexValue = -1;
         freezeDatasetColIndexLastChange = -1;
         freezeDatasetColIndexQuality = -1;
-        // souscription des tag
+        // tags subscription
         List<String> listTagPath = new ArrayList<String>();
         for (int row = 0; row < dataset.getRowCount(); row++) {
             listTagPath.add(dataset.getValueAt(row, datasetColIndexTagFullPath).toString());
@@ -202,21 +196,15 @@ public class ClientScriptModuleDataset{
             if (checkTagClientExist() == false) {
                 logger.error("You Must create tag client for subscription update : {}", TAGPATH_CLIENT_DATASET);
             }
-            // Abonnement sur la propriété Value => cf MyTagChangeListener
+            // Subscription for property Value => see MyTagChangeListener
             int rowIndex = 0;
             for (String fullTagPath : listTagPath) {
-                // fonction sans le null nok
-                //TagPath tagPath = TagPathParser.parse("default",null,fullTagPath);
                 TagPath tagPath;
                 tagPath = TagPathParser.parseSafe("default", fullTagPath);
-                // Pas de ctrl tagPath=null, pour ne pas décaler les indice entre les liste et les row du dataset
-                //if (tagPath!=null){
-                // Pas utile de contrôler si un tag apparaît plusieurs fois dans le dataset
-                // => plusieurs abonnements sur le même tag si besoin
+                // index in list and dataset row must be the same
+                // if a tag appear multiple time in the dataset, multiple subscription
                 listSubscribedTagPath.add(tagPath);
-                //logger.info("add " + tagPath.toStringFull());
-                // TODO : voir si utiliser le même listener ou un par tag ??? ou gestion synchronised ???
-                // Numero de la ligne dans le dataset
+                // TODO : possibly use the same tag change listener (synchronized) for all tag ???
                 MyTagChangeListener listener = new MyTagChangeListener(rowIndex);
                 listSubscribedTagChangeListener.add(listener);
                 //}else{
@@ -225,15 +213,11 @@ public class ClientScriptModuleDataset{
                 rowIndex++;
             }
             if (!listSubscribedTagPath.isEmpty()) {
-
-                // lecture des données des Tag ajoutés pour les mettre dans le tag client dataset
-                // TODO : pas utlise, première valeur mis à jour lors de l'abonnement ????
+                // Read properties and VQT of added tags data to update the client dataset
                 //List<Tag> listTag = this.clientContext.getTagManager().getTags(listAdd);
-                // Abonnement des tag ajoutés
                 this.clientContext.getTagManager().subscribe(listSubscribedTagPath, listSubscribedTagChangeListener);
                 logger.debug("Add subscriptions for VTQ of {} tags", listSubscribedTagPath.size());
-
-                // création la première fois
+                // create the first time
                 if (executionEngine == null) {
                     executionEngine = new BasicExecutionEngine();
                 }
@@ -279,7 +263,7 @@ public class ClientScriptModuleDataset{
                     listSubscribedTagChangeListener.clear();
                 }
             }
-            //Mémorisation Avant effacement
+            //memorize before erase
             if (dataset != null){
                 freezeDataset = new BasicDataset(dataset);
                 logger.debug("Save of {} rows",freezeDataset.getRowCount());
@@ -287,7 +271,7 @@ public class ClientScriptModuleDataset{
                 freezeDatasetColIndexValue = datasetColIndexValue;
                 freezeDatasetColIndexLastChange = datasetColIndexLastChange;
                 freezeDatasetColIndexQuality = datasetColIndexQuality;
-                // Effacement du dataset
+                // dataset erase
                 dataset = null;
                 updateTagClientDataset();
             } else {
@@ -308,7 +292,7 @@ public class ClientScriptModuleDataset{
     public synchronized void unfreezeAll() {
         try {
             logger.debug("unfreezeAll()");
-            //Init à partir de la mémorisation Avant effacement
+            //initialize with memorized data before erase
             if (freezeDataset != null){
                 dataset = new BasicDataset(freezeDataset);
                 datasetColIndexTagFullPath = freezeDatasetColIndexTagFullPath;
@@ -322,8 +306,7 @@ public class ClientScriptModuleDataset{
         }
     }
 
-    // force la relecture de l'ensemble des tags
-    // et la maj du dataset client
+    // force all tags read and update client dataset
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     public synchronized void forceUpdateTagClientDataset(){
         try {
@@ -335,13 +318,13 @@ public class ClientScriptModuleDataset{
                     //List<QualifiedValue> listQv = this.clientContext.getTagManager().read(listTagRead);
                     List<Tag> listTag = this.clientContext.getTagManager().getTags(listSubscribedTagPath);
                     int rowIndex = 0;
-                    // la liste des résultats de la lecture est ordonnée selon la liste des tag à lire
+                    // result list is sorted according the list of read tag
                     for (Tag tag : listTag){
                         if (rowIndex > dataset.getRowCount()){
                             logger.error("rowIndex={} > dataset.getRowCount={}",rowIndex,dataset.getRowCount());
                         } else {
                             dataset.setValueAt(rowIndex,datasetColIndexValue, (tag.getValue().getValue() == null) ? "null" : tag.getValue().getValue().toString());
-                            // 1.0.2 : Support des tags de type Array - ajout ctrl colxxxOk
+                            // Support for Array tags
                             if (colIndexValueOk) dataset.setValueAt(rowIndex,datasetColIndexValue,Utils.tagValueToString(tag));
                             if (colIndexLastChangeOk) dataset.setValueAt(rowIndex,datasetColIndexLastChange, tag.getValue().getTimestamp());
                             if (colIndexQualityOk) dataset.setValueAt(rowIndex,datasetColIndexQuality, tag.getValue().getQuality().toString());
@@ -380,10 +363,10 @@ public class ClientScriptModuleDataset{
         public void run() {
             logger.trace("Execute CyclicUpdateTagClientDataset");
             // updateTagClient.compareAndSet(expect, update)
-            // expect => valeur attendue
-            // update => valeur de mise à jour si valeur attendue
-            // return : true => si maj faite
-            // permet de se prémunir si le flag est mis à 1 autre part
+            // expect => expected value
+            // update => update value if the value is equal to expected
+            // return : true => if value updated
+            // to avoid that this flag is updated elsewhere
             if (updateTagClient.compareAndSet(true,false)){
                 updateTagClientDataset();
             }
@@ -437,7 +420,7 @@ public class ClientScriptModuleDataset{
     }
 
     private class MyTagChangeListener implements TagChangeListener {
-        // Nota : pas de filtrage du premier évènement qui permet de mettre à jour la première valeur
+        // Note : don't filter the first event triggered by the subscription in order to update the initial value
         private int rowIndex = -1;
         public MyTagChangeListener(int _rowIndex){
             super();
@@ -456,7 +439,7 @@ public class ClientScriptModuleDataset{
                 } else if (rowIndex > dataset.getRowCount()){
                     logger.error("rowIndex={} > dataset.getRowCount={}",rowIndex,dataset.getRowCount());
                 } else {
-                    // 1.0.2 : Support des tags de type Array
+                    //Support for tags Array
                     if (colIndexValueOk) dataset.setValueAt(rowIndex,datasetColIndexValue,Utils.tagValueToString(e.getTag()));
                     if (colIndexLastChangeOk) dataset.setValueAt(rowIndex,datasetColIndexLastChange, e.getTag().getValue().getTimestamp());
                     if (colIndexQualityOk) dataset.setValueAt(rowIndex,datasetColIndexQuality, e.getTag().getValue().getQuality().toString());
@@ -468,14 +451,13 @@ public class ClientScriptModuleDataset{
         }
         public TagProp getTagProperty()
         {
-            // pour indiquer les changement de prop à prendre en compte
-            // null => toutes
-            //return (TagProp.Value); => pour cibler par exemple la propriété value
+            // mention the property change to monitor
+            // null => all property change
+            //return (TagProp.Value); => only a specific property
             return null;
         }
     }
 
-    //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized int getSizeOfSubscribedTagsList() {
         if (listSubscribedTagPath==null){
@@ -485,7 +467,6 @@ public class ClientScriptModuleDataset{
         }
     }
 
-    //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized List<String> getSubscribedFullTagPathsList() {
         List<String> fullTagPathsList = new ArrayList<String>();
@@ -495,7 +476,6 @@ public class ClientScriptModuleDataset{
         return fullTagPathsList;
     }
 
-    //1.0.4 : Ajout
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized List<TagPath> getSubscribedTagPathsList() {
         return(listSubscribedTagPath);

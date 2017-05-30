@@ -1,6 +1,5 @@
 package com.byes.ignition.client.utils;
 
-import com.inductiveautomation.factorypmi.application.script.builtin.ClientSystemUtilities;
 import com.inductiveautomation.ignition.common.BasicDataset;
 import com.inductiveautomation.ignition.common.BundleUtil;
 import com.inductiveautomation.ignition.common.execution.impl.BasicExecutionEngine;
@@ -15,7 +14,6 @@ import com.inductiveautomation.ignition.common.sqltags.model.TagPath;
 import com.inductiveautomation.ignition.common.sqltags.model.TagProp;
 import com.inductiveautomation.ignition.common.sqltags.model.event.TagChangeEvent;
 import com.inductiveautomation.ignition.common.sqltags.model.event.TagChangeListener;
-import com.inductiveautomation.ignition.common.sqltags.model.types.DataType;
 import com.inductiveautomation.ignition.common.sqltags.model.types.TagType;
 import com.inductiveautomation.ignition.common.sqltags.parser.TagPathParser;
 
@@ -45,11 +43,10 @@ public class ClientScriptModule{
                 ClientScriptModule.class.getName().replace('.', '/'));
     }
 
-    // e.getStackTrace()[0].getMethodName() : a tester pour log method
-
     private static Pattern pattern = null;
     private static Matcher matcher = null;
 
+    // the dataset client tag to create in ignition to be notified of tags data subscriptions
     private final String TAGPATH_CLIENT_DATASET = "[Client]tag_subscription";
     private final Integer UPDATE_FREQUENCY_MS = 250;
     private final String EXECUTION_ENGINE_NAME = "CyclicUpdateTagClientDataset";
@@ -61,13 +58,12 @@ public class ClientScriptModule{
     private Map<TagPath,TagChangeListener> paths = new HashMap<TagPath,TagChangeListener>();
     private ConcurrentHashMap<String,HashMap> mapTags = new ConcurrentHashMap<String,HashMap>();
 
-    //1.0.4
     private List<String> listFreezedSubscribedTagPath = new ArrayList<String>();
 
     private List<String> listNomColonne = new ArrayList<String>();
     private List<Class<?>> listTypeColonne = new ArrayList<Class<?>>();
 
-    // flag de demande update cyclique du dataset client
+    // flag to ask for update of the tag client dataset
     private AtomicBoolean updateTagClient = new AtomicBoolean(false);
 
     private BasicExecutionEngine executionEngine = null;
@@ -128,12 +124,13 @@ public class ClientScriptModule{
     }
 
     /**
-     * Methode récursive de parcours des Tags ignition
+     * Recursive Method
+     * @param fullTagPath : full path with provider for a tag or a folder
+     * @param resultListFullTagPath
+     * @param limitResults
+     * @return : false if ok, true si result was truncated or browse error
+     * Caused by: com.inductiveautomation.ignition.client.gateway_interface.GatewayException: The tag provider 'xxxx' is not currently available.
      */
-    // fullTagPath => path complet d'un tag ou d'un folder
-    // return true, si result limité ou erreur lors du browse
-    // TODO : A revoir CR int ?
-    // Caused by: com.inductiveautomation.ignition.client.gateway_interface.GatewayException: The tag provider 'SITE1' is not currently available.
 
     @NoHint
     private boolean browseTag(String fullTagPath,List<String> resultListFullTagPath,Integer limitResults){
@@ -145,12 +142,9 @@ public class ClientScriptModule{
 
         TagPath tagPath = null;
         try {
-            // fonction sans le null nok
-            //tagPath = TagPathParser.parse("default",null,fullTagPath);
+
             tagPath = TagPathParser.parseSafe("default",fullTagPath);
-            // voir comment tester si déjà un tag ???? et pas la path d'un folder
             if (tagPath != null) {
-                //logger.info("parseSafe : {}",tagPath.getItemName());
                 listeBr = clientContext.getTagManager().browse(tagPath);
                 if (listeBr != null) {
                     for (Tag tag : listeBr) {
@@ -162,7 +156,6 @@ public class ClientScriptModule{
                             if ((limitResults > 0) && (resultListFullTagPath.size() >= limitResults)){
                                 return true;
                             }else{
-                                // retient dont le path matche avec la regex
                                 if (pattern!=null){
                                     matcher = pattern.matcher(fullTagPath + "/" + tag.getName());
                                     if (matcher.find()){
@@ -175,7 +168,7 @@ public class ClientScriptModule{
                         }
                     }
                 } else {
-                    // on suppose que c'était le path d'un tag
+                    // we assume it is a tag path
                     resultListFullTagPath.add(tagPath.toStringFull());
                 }
             }
@@ -185,10 +178,6 @@ public class ClientScriptModule{
             return true;
         }
     }
-
-    // Fonction initiale sans gestion des args par keywords
-    //    public List<String> browse(@ScriptArg("listTagPath") java.util.List<java.lang.String> listTagPath,
-    //@ScriptArg("limitResults") Integer limitResults) {
 
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     @KeywordArgs(names = {"tagpaths","limit","regex"}, types = {List.class,Integer.class,String.class})
@@ -238,8 +227,6 @@ public class ClientScriptModule{
         }
     }
 
-    //1.0.4
-    // Nota : liste peut être trié différamment selon le keySet
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized List<String> getSubscribedFullTagPathsList() {
         List<String> listFullTagPath = new ArrayList<String>();
@@ -251,7 +238,6 @@ public class ClientScriptModule{
         return(listFullTagPath);
     }
 
-    //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized List<TagPath> getSubscribedTagPathsList() {
         List<TagPath> listTagPath;
@@ -263,10 +249,6 @@ public class ClientScriptModule{
         return(listTagPath);
     }
 
-    /**
-     * Abonnement de la liste de tag, ajout aux abonnements existant
-     * @param listTagPath : List des tagPath à souscrire (yc provider [...])
-     */
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public void subscribe(@ScriptArg("listTagPath") java.util.List<java.lang.String> listTagPath) {
         try {
@@ -274,23 +256,19 @@ public class ClientScriptModule{
                 logger.error("You Must create tag client for subscription update : {}",TAGPATH_CLIENT_DATASET);
             }
 
-            // Effacement systématique en cas de rappel de la fonction unfreezeAll sans freezeAll avant
             if (listFreezedSubscribedTagPath!=null) listFreezedSubscribedTagPath.clear();
 
             List<TagPath> listAdd = new ArrayList<TagPath>();
             List<TagChangeListener> listenersAdd = new ArrayList<TagChangeListener>();
 
-            // Abonnement sur la propriété Value => cf MyTagChangeListener
+            // Subscription for property Value => see MyTagChangeListener
             for (String fullTagPath : listTagPath){
-                // fonction sans le null nok
-                //TagPath tagPath = TagPathParser.parse("default",null,fullTagPath);
                 TagPath tagPath;
                 tagPath = TagPathParser.parseSafe("default",fullTagPath);
                 if (tagPath!=null){
                     if (!paths.containsKey(tagPath)){
                         listAdd.add(tagPath);
-                        //logger.info("add " + tagPath.toStringFull());
-                        // TODO : voir si utiliser le même listener ou un par tag ??? ou gestion synchronised ???
+                        // TODO : possibly use the same tag change listener (synchronized) for all tag ???
                         MyTagChangeListener listener = new MyTagChangeListener();
                         listenersAdd.add(listener);
                         paths.put(tagPath,listener);
@@ -301,20 +279,17 @@ public class ClientScriptModule{
             }
 
             if (!listAdd.isEmpty()){
-
-                // lecture des données des Tag ajoutés pour les mettre dans le tag client dataset
+                // Read properties and VQT of added tags data to update the client dataset
                 List<Tag> listTag = this.clientContext.getTagManager().getTags(listAdd);
                 logger.debug("listTag.size()=" + listTag.size());
 
                 int indexPaths = 0;
                 for (Tag tag : listTag) {
                     HashMap mapValue = new HashMap();
-                    // Valeur convertie en String
-                    // TODO : revoir pour les autres types de valeurs
-
                     String TagFullPath = listAdd.get(indexPaths).toStringFull();
                     logger.debug("TagFullPath=" + TagFullPath);
                     mapValue.put("TagFullPath",TagFullPath);
+                    // the value is casted to a String
                     mapValue.put("Value", (tag.getValue().getValue() == null) ? "null" : tag.getValue().getValue().toString());
                     mapValue.put("LastChange",tag.getValue().getTimestamp());
                     mapValue.put("Quality",tag.getValue().getQuality().toString());
@@ -332,19 +307,16 @@ public class ClientScriptModule{
                     }
                     mapValue.put("ScanClass",tag.getAttribute(TagProp.ScanClass).getValue());
                     mapValue.put("AccessRights",tag.getAttribute(TagProp.AccessRights).getValue().toString());
-
-                    // A completer selon le besoin
-                    // ... penser à mettre à jour les listes listNomColonne et listTypeColonne dans le constructeur
                     mapTags.put(TagFullPath, mapValue);
                     logger.debug("mapTags.put tagpath {} value {}",listAdd.get(indexPaths).toStringFull(),mapValue.toString());
                     indexPaths++;
                 }
 
-                // Abonnement des tag ajoutés
+                // Subsciption for added tags
                 this.clientContext.getTagManager().subscribe(listAdd,listenersAdd);
                 logger.debug("Add subscriptions for VTQ of {} tags",paths.size());
 
-                // création la première fois
+                // create if first time
                 if (executionEngine==null){
                     executionEngine = new BasicExecutionEngine();
                 }
@@ -389,9 +361,6 @@ public class ClientScriptModule{
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public void unsubscribeAll() {
         try {
-            // Attention liste triée différamment de celle des souscription
-            // si utilisation d'un Set par exemple
-            // => ne desabonne pas !!!
             List<TagPath> listTagPath = new ArrayList<TagPath>();
             List<TagChangeListener> listTagChangeListener = new ArrayList<TagChangeListener>();
             for (HashMap.Entry<TagPath, TagChangeListener> entry : paths.entrySet()) {
@@ -409,7 +378,6 @@ public class ClientScriptModule{
         }
     }
 
-    //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     public synchronized void freezeAll() {
         try {
@@ -420,7 +388,7 @@ public class ClientScriptModule{
             for (HashMap.Entry<TagPath, TagChangeListener> entry : paths.entrySet()) {
                 listTagPath.add(entry.getKey());
                 listTagChangeListener.add(entry.getValue());
-                // Mémorisation des tag souscrits
+                // Store subscribed tags
                 listFreezedSubscribedTagPath.add(entry.getKey().toStringFull());
             }
             logger.debug("Save of {} tags",listFreezedSubscribedTagPath.size());
@@ -428,22 +396,18 @@ public class ClientScriptModule{
             logger.debug("Delete subscriptions for VTQ of {} tags",listTagPath.size());
             paths.clear();
             mapTags.clear();
-            // nota : effacement dataset provoque RAS tag client et arrêt fonction cyclique regroupement maj dataset si besoin
             updateTagClientDataset();
         } catch (Exception e) {
             logger.error("error : ",e);
         }
     }
 
-    //1.0.4
     @ScriptFunction(docBundlePrefix = "ClientScriptModuleDataset")
     public void unfreezeAll() {
         try {
             logger.debug("unfreezeAll()");
             if (listFreezedSubscribedTagPath != null){
                 if (!listFreezedSubscribedTagPath.isEmpty()) {
-                    // Copie de la liste passée en paramètre car effecament systématique de listFreezedSubscribedTagPath
-                    // dans subscribe
                     subscribe(new ArrayList<String>(listFreezedSubscribedTagPath));
                 }
             }
@@ -452,25 +416,23 @@ public class ClientScriptModule{
         }
     }
 
-    // force la relecture de l'ensemble des tags
-    // et la maj du dataset client
     @ScriptFunction(docBundlePrefix = "ClientScriptModule")
     public synchronized void forceUpdateTagClientDataset(){
         try {
             if (!mapTags.isEmpty()){
                 List<TagPath> listTagRead = new ArrayList<TagPath>(paths.keySet());
                 try{
-                    // /!\ bug Ignition => fonction ne marche pas dans le contexte client
+                    // /!\ bug Ignition => getTagManager().read doesen't work in client scope
                     // com.inductiveautomation.ignition.client.gateway_interface.GatewayException: Unable to locate function 'SQLTags.read'
-                    // cf post https://inductiveautomation.com/forum/viewtopic.php?f=74&t=16733
+                    // See Old forum post https://inductiveautomation.com/forum/viewtopic.php?f=74&t=16733
+                    // New forum : https://forum.inductiveautomation.com/t/client-module-with-sql-tag-read/12699
                     //List<QualifiedValue> listQv = this.clientContext.getTagManager().read(listTagRead);
                     List<Tag> listTag = this.clientContext.getTagManager().getTags(listTagRead);
                     int indexTag = 0;
-                    // la liste des résultats de la lecture est ordonnée selon la liste des tag à lire
+                    // the results list of tags read is ordered according to the tag to read
                     for (Tag tag : listTag){
                         HashMap mapValue = mapTags.get(listTagRead.get(indexTag).toStringFull());
                         if (mapValue != null) {
-                            // 1.0.2 : Support des tags de type Array
                             mapValue.put("Value", Utils.tagValueToString(tag));
                             mapValue.put("LastChange", tag.getValue().getTimestamp());
                             mapValue.put("Quality", tag.getValue().getQuality().toString());
@@ -510,11 +472,6 @@ public class ClientScriptModule{
         @Override
         public void run() {
             logger.trace("Execute CyclicUpdateTagClientDataset");
-            // updateTagClient.compareAndSet(expect, update)
-            // expect => valeur attendue
-            // update => valeur de mise à jour si valeur attendue
-            // return : true => si maj faite
-            // permet de se prémunir si le flag est mis à 1 autre part
             if (updateTagClient.compareAndSet(true,false)) {
                 updateTagClientDataset();
             }
@@ -558,27 +515,25 @@ public class ClientScriptModule{
     @NoHint
     private void updateTagClientDataset(){
         try {
-
-//            public BasicDataset(java.util.List<java.lang.String> columnNames,
-//                    java.util.List<java.lang.Class<?>> columnTypes,
-//                    java.lang.Object[][] data)
-//            Constructor that takes all of the information needed to create a populated dataset.
-//                    Parameters:
-//            columnNames - The column names of the dataset. Must match the length of columnTypes and data.length
-//            columnTypes - The types of each column. Must match the length of columnNames and data.length
-//            data - The raw data. An array of columns of data. (NOT rows.)
-//            colonne => tableau de données de même type
-//            BasicDataset dataset = new BasicDataset(listNomColonne.toArray(),listTypeColonne.toArray(),null);
+            /*
+                public BasicDataset(java.util.List<java.lang.String> columnNames,
+                        java.util.List<java.lang.Class<?>> columnTypes,
+                        java.lang.Object[][] data)
+                Constructor that takes all of the information needed to create a populated dataset.
+                        Parameters:
+                columnNames - The column names of the dataset. Must match the length of columnTypes and data.length
+                columnTypes - The types of each column. Must match the length of columnNames and data.length
+                data - The raw data. An array of columns of data. (NOT rows.)
+            */
 
             if (mapTags.isEmpty()){
-                // Ecriture du dataset NULL dans le tag client
+                // Write a null dataset
                 this.clientContext.getTagManager().write(TagPathParser.parse("client", TAGPATH_CLIENT_DATASET), null);
                 stopCyclicUpdateTagClientDataset();
             } else {
                 Object[][] data = new Object[listNomColonne.size()][mapTags.keySet().size()];
-                // Conversion mapTags en Dataset
+                // Convert mapTags to Dataset
                 int ligne = 0;
-                // parcours de remplissage de data par ligne
                 for (HashMap.Entry<String, HashMap> entry : mapTags.entrySet()) {
                     HashMap mapValues = entry.getValue();
                     int colonne = 0;
@@ -588,7 +543,7 @@ public class ClientScriptModule{
                     }
                     ligne++;
                 }
-                // Ecriture du dataset dans le tag client
+                // Write the dataset in the tag client
                 BasicDataset dataset = new BasicDataset(listNomColonne, listTypeColonne, data);
                 this.clientContext.getTagManager().write(TagPathParser.parse("client", TAGPATH_CLIENT_DATASET), dataset);
             }
@@ -598,8 +553,7 @@ public class ClientScriptModule{
     }
 
     private class MyTagChangeListener implements TagChangeListener {
-        // Nota : pas de filtrage du premier évènement qui permet de mettre à jour la première valeur
-
+        // Nota : first event on subxcription is not filtered
         public MyTagChangeListener(){
             super();
         }
@@ -608,22 +562,12 @@ public class ClientScriptModule{
         public void tagChanged(TagChangeEvent e)
         {
             try{
-/*
-                if (e.getTagProperty()==null){
-                    logger.info("tagChanged : e.getTagProperty()==null");
-                } else if (e.getTagProperty().equals(TagProp.Value)) {
-
-                }*/
-
                 logger.debug("tagChanged : FullTagPath={}, Value={}, LastChange={}", e.getTagPath().toStringFull()
                                                                     , (e.getTag().getValue().getValue() == null) ? "null" : e.getTag().getValue().getValue().toString()
                                                                     , e.getTag().getValue().getTimestamp().toString());
-                // TODO : toStringFull voir si retourne le bon path, deja avec provider ?????
-                // e.getTagPath().toStringFull() => de la form [source]path/to/tag
-
+                // e.getTagPath().toStringFull() => [source]path/to/tag
                 HashMap mapValue = mapTags.get(e.getTagPath().toStringFull());
                 if (mapValue != null) {
-                    // 1.0.2 : Support des tags de type Array
                     mapValue.put("Value", Utils.tagValueToString(e.getTag()));
                     mapValue.put("LastChange", e.getTag().getValue().getTimestamp());
                     mapValue.put("Quality", e.getTag().getValue().getQuality().toString());
@@ -631,42 +575,15 @@ public class ClientScriptModule{
                 } else {
                     logger.error("tag changed, not found : {}", e.getTagPath().toStringFull());
                 }
-                    /*
-                }
-
-                } else if (e.getTagProperty().equals(TagProp.LastChange)){
-                    logger.info("tagChanged : FullTagPath={}, LastChange={}",e.getTagPath().toStringFull(),e.getTag().getValue().getTimestamp().toString());
-                    // TODO : toStringFull voir si retourne le bon path, deja avec provider ?????
-                    HashMap mapValue =  mapTags.get(e.getTagPath().toStringFull());
-                    if (mapValue!=null) {
-                        mapValue.put("LastChange", e.getTag().getValue().getValue().toString());
-                        updateTagClient.set(true);
-                    } else {
-                        logger.error("tag changed, not found : {}", e.getTagPath().toStringFull());
-                    }
-                } else if (e.getTagProperty().equals(TagProp.Quality)){
-                    logger.info("tagChanged : FullTagPath={}, Quality={}",e.getTagPath().toStringFull(),e.getTag().getValue().getQuality().toString());
-                    // TODO : toStringFull voir si retourne le bon path, deja avec provider ?????
-                    HashMap mapValue =  mapTags.get(e.getTagPath().toStringFull());
-                    if (mapValue!=null) {
-                        mapValue.put("Quality", e.getTag().getValue().getValue().toString());
-                        updateTagClient.set(true);
-                    } else {
-                        logger.error("tag changed, not found : {}", e.getTagPath().toStringFull());
-                    }
-                }*/
-                // TODO : pour test
-                //updateTagClient.set(true);
-                //updateTagClientDataset();
             }catch(Exception ex){
                 logger.error(ex.getMessage());
             }
         }
         public TagProp getTagProperty()
         {
-            // pour indiquer les changement de prop à prendre en compte
-            // null => toutes
-            //return (TagProp.Value); => pour cibler par exemple la propriété value
+            // mention the property change to monitor
+            // null => all property change
+            //return (TagProp.Value); => only a specific property
             return null;
         }
     }

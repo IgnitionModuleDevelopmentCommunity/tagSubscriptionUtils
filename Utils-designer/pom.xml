@@ -58,15 +58,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- juste pour la classe AuditRecord
-        <dependency>
-            <groupId>com.inductiveautomation.ignitionsdk</groupId>
-            <artifactId>gateway-api</artifactId>
-            <version>${ignition-sdk-version}</version>
-            <type>pom</type>
-            <scope>provided</scope>
-        </dependency>-->
-
     </dependencies>
 
     <build>

@@ -3,17 +3,13 @@ package com.byes.ignition.gateway.utils;
 import com.inductiveautomation.ignition.common.BundleUtil;
 import com.inductiveautomation.ignition.common.licensing.LicenseState;
 
-import com.inductiveautomation.ignition.gateway.clientcomm.ClientReqSession;
 import com.inductiveautomation.ignition.gateway.model.AbstractGatewayModuleHook;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 
-import com.inductiveautomation.metro.api.ServiceManager;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
-// 2.0.2 : exposition fonction pour insérer dans audit
 import com.inductiveautomation.ignition.common.script.ScriptManager;
-import com.inductiveautomation.ignition.common.script.hints.PropertiesFileDocProvider;
 
 public class GatewayHook extends AbstractGatewayModuleHook {
 
@@ -24,8 +20,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         return true;
     }
 
-    private GatewayScriptModule scriptModule = new GatewayScriptModule();
-
 	public GatewayHook() {
 		logger = LogManager.getLogger(this.getClass());
 	}
@@ -35,8 +29,6 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 		try {
             logger.info("setup()");
 			this.context = context;
-//            scriptModule.setContext(context);
-
 		} catch (Exception e) {
 			logger.fatal("Error setting module.", e);
 		}
@@ -45,16 +37,8 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void initializeScriptManager(ScriptManager manager) {
         logger.info("initializeScriptManager()");
-
+		// no gateway scoped function
         super.initializeScriptManager(manager);
-
-        // no gateway scoped function
-		/*
-        manager.addScriptModule(
-                "system.audit",
-                scriptModule,
-                new PropertiesFileDocProvider());
-                */
     }
 
 	@Override

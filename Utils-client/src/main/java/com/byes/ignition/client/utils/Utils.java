@@ -1,6 +1,5 @@
 package com.byes.ignition.client.utils;
 
-
 import com.inductiveautomation.ignition.common.Dataset;
 import com.inductiveautomation.ignition.common.sqltags.model.Tag;
 import com.inductiveautomation.ignition.common.sqltags.model.types.DataType;
@@ -60,30 +59,21 @@ public final class Utils {
                 return valeurTab;
             } else if (isTagDataset(tag)){
                 Dataset data = (Dataset) tag.getValue().getValue();
-                //String valeurData = "";
                 StringBuilder valeurData = new StringBuilder();
                 for (int row=0;row < data.getRowCount();row++){
-                    //1.0.4 - 1.0.5
-                    //if (valeurData.isEmpty()){
                     if (valeurData.toString().isEmpty()){
-                        //valeurData = valeurData + "[";
                         valeurData.append("[");
                     } else {
-                        //valeurData = valeurData + ",[";
                         valeurData.append(",[");
                     }
                     for (int col=0;col < data.getColumnCount();col++) {
                         valeurData.append((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
-                        //valeurData += ((data.getValueAt(row, col) == null) ? "null" : data.getValueAt(row, col).toString());
                         if (col < data.getColumnCount()-1){
-                            //valeurData += ",";
                             valeurData.append(",");
                         }
                     }
                     valeurData.append("]");
-                    //valeurData = valeurData + "]";
                 }
-                //valeurData = "[" + valeurData + "]";
                 valeurData.insert(0,"[").append("]");
                 return valeurData.toString();
             } else {
