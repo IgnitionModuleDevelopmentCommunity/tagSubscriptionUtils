@@ -22,6 +22,8 @@ As the result, in <b>use case 1</b>, you can quickly create an efficient tag bro
 Use <b>case 2</b>, an input dataset with columns V, T, Q automatically refreshed when the tags' data change.
 Button refresh can only be use to force a refresh.
 
+![tagbrowser](/dataset.jpg)
+
 Project example :
 See : <b>TagsSubscriptions_Examples_2017-03-22.zip</b>
 
