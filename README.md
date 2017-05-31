@@ -18,10 +18,10 @@ In return, the module write a client tag (typed dataset) with:
 1.	tags data with Value, Timestamp, Quality updated
 2.	input dataset with Value, Timestamp, Quality updated
 
-As the result, in <b>use case 1</b>, you can quickly create an efficient tag browser based on:
-•	this utils modules
-•	a tag browser tree
-•	a power table (binded to the tag client updated by this module)
+As the result, in <b>use case 1</b>, you can quickly create an efficient tag browser based on:<br>
+*	this utils modules<br>
+*	a tag browser tree<br>
+*	a power table (binded to the tag client updated by this module)<br>
 
 ![tagbrowser](/tagbrowser.jpg)
 
