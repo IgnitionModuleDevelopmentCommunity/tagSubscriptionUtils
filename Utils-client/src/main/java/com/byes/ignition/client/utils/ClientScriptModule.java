@@ -587,4 +587,48 @@ public class ClientScriptModule{
             return null;
         }
     }
+
+    /**
+     * Check if a list of tag exists
+     * @param listFullTagPath : List of Full tag path to check
+     * @return list of Boolean (True if tag exist)
+     */
+    @ScriptFunction(docBundlePrefix = "ClientScriptModule")
+    public List<Boolean> tagsExists(List<String> listFullTagPath){
+        List<Boolean> results = new ArrayList<Boolean>();
+        List<TagPath> listTagPath = new ArrayList<TagPath>();
+        try {
+            // String Full tag path to tagPath
+            for (String fullTagPath : listFullTagPath) {
+                try {
+                    TagPath tagPath;
+                    tagPath = TagPathParser.parseSafe("default", fullTagPath);
+                    if (tagPath != null) {
+                        listTagPath.add(tagPath);
+                    } else {
+                        listTagPath.add(null);
+                        logger.error("parseSafe for : {} return null", fullTagPath);
+                    }
+                }catch(Exception e){
+                    listTagPath.add(null);
+                    logger.error("error : ",e);
+                }
+            }
+            // /!\ bug Ignition => fonction ne marche pas dans le contexte client
+            // com.inductiveautomation.ignition.client.gateway_interface.GatewayException: Unable to locate function 'SQLTags.read'
+            // cf post https://inductiveautomation.com/forum/viewtopic.php?f=74&t=16733
+            //List<QualifiedValue> listQv = this.clientContext.getTagManager().read(listTagRead);
+            List<Tag> listTag = this.clientContext.getTagManager().getTags(listTagPath);
+            for (Tag tag : listTag){
+                if (tag != null) {
+                    results.add(Boolean.TRUE);
+                } else{
+                    results.add(Boolean.FALSE);
+                }
+            }
+        }catch(Exception e){
+            logger.error("error : ",e);
+        }
+        return results;
+    }
 }
